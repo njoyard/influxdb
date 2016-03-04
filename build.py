@@ -122,6 +122,8 @@ def package_scripts(build_root):
 
 def run_generate():
     print "Running go generate to rebuild admin UI static filesystem..."
+    if not check_path_for("statik"):
+        run("go install github.com/rakyll/statik")
     run("go generate ./services/admin")
     return True
 
