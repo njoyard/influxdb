@@ -149,7 +149,7 @@ def run(command, allow_failure=False, shell=False):
         else:
             out = subprocess.check_output(command.split(), stderr=subprocess.STDOUT)
         if debug:
-            print "[DEBUG] command output: \n{}\n".format(out)
+            print "[DEBUG] command output:\n {}".format(out)
     except subprocess.CalledProcessError as e:
         print ""
         print ""
@@ -414,7 +414,7 @@ def build(version=None,
             elif arch == "armhf" or arch == "arm":
                 build_command += "GOARM=6 "
             elif arch == "arm64":
-                build_command += "GOARM=arm64 "
+                build_command += "GOARM=7 "
             else:
                 print "!! Invalid ARM architecture specifed: {}".format(arch)
                 print "Please specify either 'armel', 'armhf', or 'arm64'"
@@ -756,12 +756,12 @@ def main():
 
     build_output = {}
 
-    if generate:
-        if not run_generate():
-            return 1
-
     if run_get:
         if not go_get(branch, update=update, no_stash=no_stash):
+            return 1
+
+    if generate:
+        if not run_generate():
             return 1
 
     if test:
