@@ -124,7 +124,13 @@ def run_generate():
     print "Running go generate to rebuild admin UI static filesystem..."
     if not check_path_for("statik"):
         run("go install github.com/rakyll/statik")
+    orig_path = None
+    if os.path.join(os.environ.get("GOPATH"), "bin") not in os.environ["PATH"].split(os.pathsep):
+        orig_path = os.environ["PATH"].split(os.pathsep)
+        os.environ["PATH"] = os.environ["PATH"].split(os.pathsep).append(os.path.join(os.environ.get("GOPATH"), "bin"))
     run("go generate ./services/admin")
+    if orig_path is not None:
+        os.environ["PATH"] = orig_path
     return True
 
 def go_get(branch, update=False, no_stash=False):
