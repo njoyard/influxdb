@@ -41,6 +41,9 @@ type QueryExecutor struct {
 	// Used for executing meta statements on all data nodes.
 	MetaExecutor *MetaExecutor
 
+	// Used for managing and tracking running queries.
+	QueryManager influxql.QueryManager
+
 	// Remote execution timeout
 	Timeout time.Duration
 
@@ -82,6 +85,19 @@ func (e *QueryExecutor) executeQuery(query *influxql.Query, database string, chu
 		e.statMap.Add(statQueriesActive, -1)
 		e.statMap.Add(statQueryExecutionDuration, time.Since(start).Nanoseconds())
 	}(time.Now())
+
+	if e.QueryManager != nil {
+		var err error
+		_, closing, err = e.QueryManager.AttachQuery(&influxql.QueryParams{
+			Query:    query,
+			Database: database,
+			DetachCh: closing,
+		})
+		if err != nil {
+			results <- &influxql.Result{Err: err}
+			return
+		}
+	}
 
 	logger := e.logger()
 
@@ -170,6 +186,8 @@ func (e *QueryExecutor) executeQuery(query *influxql.Query, database string, chu
 			rows, err = e.executeShowDiagnosticsStatement(stmt)
 		case *influxql.ShowGrantsForUserStatement:
 			rows, err = e.executeShowGrantsForUserStatement(stmt)
+		case *influxql.ShowQueriesStatement:
+			rows, err = e.executeShowQueriesStatement(stmt)
 		case *influxql.ShowRetentionPoliciesStatement:
 			rows, err = e.executeShowRetentionPoliciesStatement(stmt)
 		case *influxql.ShowServersStatement:
@@ -199,7 +217,7 @@ func (e *QueryExecutor) executeQuery(query *influxql.Query, database string, chu
 			Err:         err,
 		}
 
-		// Stop of the first error.
+		// Stop after the first error.
 		if err != nil {
 			break
 		}
@@ -648,6 +666,10 @@ func (e *QueryExecutor) executeShowGrantsForUserStatement(q *influxql.ShowGrants
 		row.Values = append(row.Values, []interface{}{d, p.String()})
 	}
 	return []*models.Row{row}, nil
+}
+
+func (e *QueryExecutor) executeShowQueriesStatement(q *influxql.ShowQueriesStatement) (models.Rows, error) {
+	return influxql.ExecuteShowQueriesStatement(e.QueryManager, q)
 }
 
 func (e *QueryExecutor) executeShowRetentionPoliciesStatement(q *influxql.ShowRetentionPoliciesStatement) (models.Rows, error) {
