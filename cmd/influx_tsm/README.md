@@ -38,13 +38,13 @@ Follow these steps to perform a conversion.
 Below is an example session, showing a database being converted.
 
 ```
-$ mkdir ~/influxdb_backup
-$ sudo -u influxdb influx_tsm -backup ~/influxdb_backup -parallel /var/lib/influxdb/data
+$ sudo -u influxdb mkdir /tmp/influxdb_backup
+$ sudo -u influxdb influx_tsm -backup /tmp/influxdb_backup -parallel /var/lib/influxdb/data
 
 b1 and bz1 shard conversion.
 -----------------------------------
 Data directory is:                  /var/lib/influxdb/data
-Backup directory is:                /home/user/influxdb_backup
+Backup directory is:                /tmp/influxdb_backup
 Databases specified:                all
 Database backups enabled:           yes
 Parallel mode enabled (GOMAXPROCS): yes (8)
@@ -82,7 +82,7 @@ Total conversion time:               7.330443ms
 
 $ # restart node, verify data
 
-$ rm -r ~/influxdb_backup
+$ sudo rm -r /tmp/influxdb_backup
 ```
 
 Note that the tool first lists the shards that will be converted,
@@ -97,7 +97,7 @@ starting InfluxDB. If needed, shard permissions can be corrected with
 the `chown` command. For example:
 
 ```
-chown -R influxdb:influxdb /var/lib/influxdb
+sudo chown -R influxdb:influxdb /var/lib/influxdb
 ```
 
 ## Rolling back a conversion
@@ -109,13 +109,13 @@ data after a successful conversion, you notice things missing or
 something just isn't right, you can "undo" the conversion:
 
 - Shut down your node (this is very important)
-- Remove the database's directory from the influxdb `data` directory (default: ~/.influxdb/data/XYZ)
+- Remove the database's directory from the influxdb `data` directory (default: `~/.influxdb/data/XYZ` for binary installations or `/var/lib/influxdb/data/XYZ` for packaged installations)
 - Copy (to really make sure the shard is preserved) the database's directory from the backup directory you created into the `data` directory.
 
 Using the same directories as above, and assuming a database named `stats`:
 
 ```
-$ rm -r ~/.influxdb/data/stats
-$ cp -r ~/influxdb_backup/stats ~/.influxdb/data/
+$ sudo rm -r /var/lib/influxdb/data/stats
+$ sudo cp -r /tmp/influxdb_backup/stats /var/lib/influxdb/data/
 $ # restart influxd node
 ```
